@@ -15,7 +15,7 @@ try:
     else:
         from .dev import *
         print(f"{YELLOW}{BOLD}{Symbols.LOADING} : Loading development settings{RESET}\n")
-except ImportError as e:
+except Exception as e:
     print(f"{RED}{BOLD}{Symbols.ERROR} : Error loading settings: {e}{RESET}\n")
     raise str(e)
 
