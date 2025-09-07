@@ -303,19 +303,19 @@ class RegisterAPIView(APIView):
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
                 # Send welcome email
-                # email = email_service_manager.send_welcome_email(
-                #     recipient=user.email,
-                #     username=user.username,
-                #     otp=verification.otp,
-                #     token=verification.token
-                # )
-                #  # Log email sending result
-                # if not email:
-                #     logger.error(
-                #         f"Failed to send welcome email to {user.email}",
-                #         extra={'service': 'EMAIL SERVICE'},
-                #         exc_info=True
-                #     )
+                email = email_service_manager.send_welcome_email(
+                    recipient=user.email,
+                    username=user.username,
+                    otp=verification.otp,
+                    token=verification.token
+                )
+                 # Log email sending result
+                if not email:
+                    logger.error(
+                        f"Failed to send welcome email to {user.email}",
+                        extra={'service': 'EMAIL SERVICE'},
+                        exc_info=True
+                    )
                 logger.info(
                     f"User {user.username} registered successfully",
                     extra={"service": "USER SERVICE"},
