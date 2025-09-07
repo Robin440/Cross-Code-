@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 10px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            border-radius: 8px 8px 0 0;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .content p {
+            margin: 10px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+        .otp{
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>👾 {{ subject }}</h2>
+        </div>
+        <div class="content">
+            {% block content %}
+                {% if message %}
+                    <p>{{ message }}</p>
+                {% endif %}
+                {% if link %}
+                    <p><a href="{{ link }}" class="button">{{ action_text|default:"Click Here" }}</a></p>
+                {% endif %}
+                {% if otp %}
+                    <p>Your OTP is: <a href="" class="otp">{{ otp }}</a> </p>
+
+                {% endif %}
+                {% if additional_info %}
+                    <p>{{ additional_info }}</p>
+                {% endif %}
+            {% endblock %}
+        </div>
+        <div class="footer">
+            <p>Best regards,<br>Cross Code Team</p>
+        </div>
+    </div>
+</body>
+</html>

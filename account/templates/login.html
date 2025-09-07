@@ -1,0 +1,46 @@
+<!-- login.html (extends base.html) -->
+{% extends 'base.html' %}
+
+{% block title %}👾 Cross Code{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    {% if error %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+  <strong>Ouch!</strong> {{error}}.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% elif message %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+  <strong>Yay!</strong> {{message}}.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h2 class="text-center mb-4">Login</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-custom w-100">Login</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="#" class="btn btn-custom w-100"><i class="fab fa-google"></i> Login with Gmail</a>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'register' %}">Forgot Password?</a>
+            </div>
+            <div class="text-center mt-2">
+                <a href="{% url 'register' %}">Don't have an account? Register</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

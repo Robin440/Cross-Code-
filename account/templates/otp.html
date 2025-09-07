@@ -1,0 +1,57 @@
+<!-- otp.html (extends base.html) -->
+{% extends 'base.html' %} 
+
+<!-- {% block title %}Enter OTP{% endblock %}  -->
+
+
+
+{% block content %}
+
+<div class="row justify-content-center">
+  {% if error %}
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>Ouch!</strong> {{error}}.
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% elif message %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong>Yay!</strong> {{message}}.
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endif %}
+
+  <div class="col-md-6">
+    <div class="card p-4">
+      <h2 class="text-center mb-4">Enter OTP 🔐</h2>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="otp" class="form-label">🔑 Enter your OTP Code</label>
+          <input
+            type="text"
+            class="form-control"
+            id="otp"
+            name="otp"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-custom w-100">Verify</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="text-center mt-3">
+  <p>ℹ️ We have send you an email with OTP and verfication link.</p>
+</div>
+{% endblock %}

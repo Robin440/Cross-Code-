@@ -1,0 +1,117 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg shadow bg-white">
+  <div class="container-fluid d-flex justify-content-between m-3">
+    <!-- Logo -->
+    <img src="{% static 'icons/logo-no-background.png' %}" alt="My Image" class="d-none d-lg-block"
+      style="width: 250px; height: 60px;" />
+
+    <!-- Smaller logo for medium screens (md and below) -->
+    <img src="{% static 'icons/logo-no-background.png' %}" alt="My Image" class="d-lg-none"
+      style="width: 70px; height: 45px;" />
+
+      <!-- Dropdown Menu -->
+
+    <div class="dropdown d-none d-lg-block d-xl-block" id="userDropdown"
+      data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+      <div class="d-flex align-items-center justify-content-start ms-0 gap-2">
+        {% if data.member_image and data.member_image|length > 0 %}
+        <!-- Display the first image from the member_image list -->
+        <img src="{{ data.member_image.0.image }}" alt="User Image" class="img-fluid rounded-circle" style="width: 45px; height: 45px;" />
+    {% else %}
+        <!-- Fallback icon if no image is present -->
+        <i class="fa-solid fa-circle-user fa-lg fs-2 d-none d-lg-block"></i>
+    {% endif %}
+      <span class="me-2 d-none d-lg-block">Hi,{{data.user.first_name}}</span>
+    </div>
+
+      <ul class="dropdown-menu" aria-labelledby="userDropdown">
+        <li>
+          <a class="dropdown-item" href="#" id="logout" data-bs-toggle="modal" data-bs-target="#logoutModal">
+            Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- Hamburger Button for Mobile View -->
+    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </div>
+
+  <!-- Collapsible Content (Hamburger Menu) -->
+  <div class="collapse navbar-collapse hamburger" id="navbarNav">
+    <ul class="navbar-nav text-white" id="navbarItems">
+      <!-- Admin Link -->
+      <li class="nav-item d-lg-none">
+        <a class="nav-link d-flex align-items-center text-white" id="admin" href="#" data-bs-toggle="collapse" data-bs-target="#adminSubMenu" aria-expanded="false">
+          <i class="fa-solid fa-user-tie text-white"></i>
+          {% if user %}
+  <span class="ms-2">
+    <h6 style="color: black;">Hi, {{ data.member.user.first_name  }}</h6>
+  </span>
+{% else %}
+  <span class="ms-2">
+    <h6 style="color: black;">Admin</h6>
+  </span>
+{% endif %}
+
+        </a>
+        <ul class="nav flex-column sub-menu collapse" id="adminSubMenu">
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="">
+              <span class="menu-title" style="color: black;" >Profile</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <li class="nav-item d-flex align-items-center">
+        <a class="nav-link d-flex align-items-center text-dark" id="farmer" href="#" data-bs-toggle="collapse" data-bs-target="#farmerSubMenu" aria-expanded="false">
+          <!-- <i class="fa-solid fa-person-digging fa-lg text-dark"></i> -->
+          <h6 class= "mb-0" style="color: black;">Support</h6>
+        </a>
+        <ul class="nav flex-column sub-menu collapse" id="farmerSubMenu">
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="">
+              <span class="menu-title" style="color: black;">Chat with us</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="#">
+              <span class="menu-title">Email Us</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <li class="nav-item d-flex align-items-center">
+        <i class="fa-solid fa-circle-user fa-lg fs-2 text-white"></i>
+        <a class="btn btn-sm text-dark" id="logout" data-bs-toggle="modal" data-bs-target="#logoutModal">
+          <h6 class="mb-0">Logout</h6>
+        </a>
+      </li>
+    </ul>
+  </div>
+  </div>
+</nav>
+
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to logout?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="{%  url 'user_logout' %}" class="btn btn-primary">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+

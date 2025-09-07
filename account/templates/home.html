@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <div class="header-home">
+    <!-- You can customize this part or include another header specifically for the home page -->
+    {% include 'header.html' %}
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Carousel for Featured Products -->
+
+  <!-- Apps  Section -->
+  <section class="mt-5">
+    <h2 class="text-center">Our Apps</h2>
+    <div class="row text-center mt-4">
+      {% for app in apps %}
+      <div class="col-md-4">
+        <!-- Wrap each card with a clickable anchor -->
+        <a href="{% url app.url_name %}" class="text-decoration-none">
+          <div class="card h-100">
+            <div class="card-body">
+              <img src="{{ app.image.url }}" alt="{{ app.name }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
+              <h4 class="card-title">{{ app.name }}</h4>
+              <!-- Add description here -->
+              <p class="card-text mt-2">{{ app.description }}</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  
+
+  <!-- Featured Products Section -->
+  <section class="mt-5">
+    <h2 class="text-center">Upcoming Apps</h2>
+    <div class="row text-center mt-4">
+      {% for app in upcoming_apps %}
+      <div class="col-md-4">
+        <!-- Wrap each card with a clickable anchor -->
+        <a href="#" class="text-decoration-none">
+          <div class="card h-100">
+            <div class="card-body">
+              <img src="{{ app.image.url }}" alt="{{ app.name }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
+              <h4 class="card-title">{{ app.name }}</h4>
+              <!-- Add description here -->
+              <p class="card-text mt-2">{{ app.description }}</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+
+  <section class="mt-5">
+    <h2 class="text-center">Our Service</h2>
+    <div class="row text-center mt-4">
+      {% for service in services %}
+      <div class="col-md-4">
+        <!-- Wrap each card with a clickable anchor -->
+        <a href="#" class="text-decoration-none">
+          <div class="card h-100">
+            <div class="card-body">
+              <img src="{{ service.image.url }}" alt="{{ service.name }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
+              <h4 class="card-title">{{ service.name }}</h4>
+              <!-- Add description here -->
+              <p class="card-text mt-2">{{ service.description }}</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  
+  <section class="mt-5">
+    <h2 class="text-center">Developed By</h2>
+    <div class="row text-center mt-4">
+        <div class="col-md-12">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title">Robin Rajan</h4>
+                    <iframe src="https://www.robinrajan.com" 
+                            style="border: none; width: 100%; height: 600px;" 
+                            title="My Portfolio">
+                        Your browser does not support iframes.
+                    </iframe>
+                    <p class="card-text mt-2">Check out my projects and work showcased on my portfolio site!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+  <!-- Newsletter Subscription Section -->
+  <section class="newsletter mt-5 bg-light p-5 text-center">
+    <h2>Subscribe to Our Newsletter</h2>
+    <p>Get the latest updates and offers.</p>
+    <form action="#" method="POST">
+      <div class="input-group mb-3">
+        <input type="email" class="form-control" placeholder="Enter your email" aria-label="Recipient's email">
+        <button class="btn btn-primary" type="submit">Subscribe</button>
+      </div>
+    </form>
+  </section>
+
+
+
+
+  
+</div>
+{% endblock %}
+
+
