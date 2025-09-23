@@ -1,8 +1,26 @@
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser,Permission
 from django.db import models
 from core.models import TimestampedModel
 import uuid
+
+
+class Role(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
+    permissions = models.ManyToManyField(
+        Permission,
+        related_name='roles',
+        blank=True,
+        help_text="Permissions assigned to this role"
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Role"
+        verbose_name_plural = "Roles"
 
 class CustomUser(AbstractUser, TimestampedModel):
     """Custom user model extending AbstractUser with additional fields."""
@@ -11,7 +29,14 @@ class CustomUser(AbstractUser, TimestampedModel):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True,unique=True)
     verified = models.BooleanField(default=False)
+    roles = models.ManyToManyField(
+        Role,
+        related_name='users',
+        blank=True,
+        help_text="Roles assigned to this user"
+    )
     USERNAME_FIELD = 'username'
+    
 
 
     def __str__(self):
@@ -44,3 +69,5 @@ class Verification(models.Model):
             models.Index(fields=['token']),
             models.Index(fields=['otp']),
         ]
+
+
