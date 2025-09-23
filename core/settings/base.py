@@ -27,14 +27,14 @@ try:
     """
 
     print(loading("Loading base settings..."))
-    
+
     if os.path.exists(os.path.join(BASE_DIR, ".env")):
         print(success(".env file loaded successfully."))
     else:
         print(warning(".env file not found. Proceeding without it."))
 
     # Create logs directory if it doesn't exist
-    logs_dir = os.path.join(BASE_DIR, 'logs')
+    logs_dir = os.path.join(BASE_DIR, "logs")
     os.makedirs(logs_dir, exist_ok=True)
 
     # Quick-start development settings - unsuitable for production
@@ -63,7 +63,7 @@ try:
         "account",
         "api",
         "rest_framework.authtoken",
-        "rest_framework_simplejwt.token_blacklist"
+        "rest_framework_simplejwt.token_blacklist",
     ]
 
     MIDDLEWARE = [
@@ -75,7 +75,7 @@ try:
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
         "core.middleware.RequestContextMiddlewares.RequestContextMiddleware",
-        "core.middleware.JWTFromCookieMiddleware.JWTFromCookieMiddleware"
+        "core.middleware.JWTFromCookieMiddleware.JWTFromCookieMiddleware",
     ]
 
     ROOT_URLCONF = "core.urls"
@@ -139,10 +139,9 @@ try:
     DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
     AUTHENTICATION_BACKENDS = [
-    "account.authentication.EmailBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
-
+        "account.authentication.EmailBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
 
     REST_FRAMEWORK = {
         "DEFAULT_RENDERER_CLASSES": [
@@ -164,87 +163,99 @@ try:
     }
 
     DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"))}
-    
+
     LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {service} {user_id} {request_path} {message}',
-            'style': '{',
-            'defaults': {'service': 'UNKNOWN', 'user_id': 'anonymous', 'request_path': 'unknown'},
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "verbose": {
+                "format": "{levelname} {asctime} {module} {service} {user_id} {request_path} {message}",
+                "style": "{",
+                "defaults": {
+                    "service": "UNKNOWN",
+                    "user_id": "anonymous",
+                    "request_path": "unknown",
+                },
+            },
+            "simple": {
+                "format": "{levelname} {service} {message}",
+                "style": "{",
+                "defaults": {"service": "UNKNOWN"},
+            },
+            "json": {
+                "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "format": "%(levelname)s %(asctime)s %(module)s %(service)s %(user_id)s %(request_path)s %(message)s",
+            },
         },
-        'simple': {
-            'format': '{levelname} {service} {message}',
-            'style': '{',
-            'defaults': {'service': 'UNKNOWN'},
+        "filters": {
+            "request_context": {
+                "()": RequestContextFilter,
+            },
         },
-        'json': {
-            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(levelname)s %(asctime)s %(module)s %(service)s %(user_id)s %(request_path)s %(message)s',
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "simple",
+                "filters": ["request_context"],
+            },
+            "file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": os.path.join(BASE_DIR, "logs", "server.log"),
+                "maxBytes": 1024 * 1024 * 5,  # 5 MB per file
+                "backupCount": 5,  # Keep 5 backup files
+                "formatter": "verbose",
+                "filters": ["request_context"],
+            },
+            "json_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": os.path.join(BASE_DIR, "logs", "server.json.log"),
+                "maxBytes": 1024 * 1024 * 5,
+                "backupCount": 5,
+                "formatter": "json",
+                "filters": ["request_context"],
+            },
         },
-    },
-    'filters': {
-        'request_context': {
-            '()': RequestContextFilter,
+        "loggers": {
+            "": {
+                "handlers": ["console", "file", "json_file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "account": {
+                "handlers": ["console", "file", "json_file"],
+                "level": "DEBUG",  # Capture DEBUG for development
+                "propagate": False,
+            },
+            "api": {
+                "handlers": ["console", "file", "json_file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "services.email": {
+                "handlers": ["console", "file", "json_file"],
+                "level": "INFO",
+                "propagate": False,
+            },
         },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-            'filters': ['request_context'],
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'server.log'),
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB per file
-            'backupCount': 5,  # Keep 5 backup files
-            'formatter': 'verbose',
-            'filters': ['request_context'],
-        },
-        'json_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'server.json.log'),
-            'maxBytes': 1024 * 1024 * 5,
-            'backupCount': 5,
-            'formatter': 'json',
-            'filters': ['request_context'],
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console', 'file', 'json_file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'account': {
-            'handlers': ['console', 'file', 'json_file'],
-            'level': 'DEBUG',  # Capture DEBUG for development
-            'propagate': False,
-        },
-        'api': {
-            'handlers': ['console', 'file', 'json_file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'services.email': {
-            'handlers': ['console', 'file', 'json_file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-}
+    }
 
+    CSRF_TRUSTED_ORIGINS = [
+        "https://crosscode.robinrajan.com",
+        "http://crosscode.robinrajan.com",
+    ]
 
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = "smtp.gmail.com"
-    EMAIL_PORT=587
-    EMAIL_USE_TLS=True
-    EMAIL_HOST_USER=os.getenv("EMAIL_HOST_USER")  # Your Gmail address
-    EMAIL_HOST_PASSWORD=os.getenv('EMAIL_HOST_PASSWORD') # The 16-character App Password from step 2
-    DEFAULT_FROM_EMAIL = 'Cross Code <your-email@gmail.com>'  # Optional: for consistent sender display
-    DOMAIN=os.getenv("DOMAIN","http://localhost:8000")
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")  # Your Gmail address
+    EMAIL_HOST_PASSWORD = os.getenv(
+        "EMAIL_HOST_PASSWORD"
+    )  # The 16-character App Password from step 2
+    DEFAULT_FROM_EMAIL = (
+        "Cross Code <your-email@gmail.com>"  # Optional: for consistent sender display
+    )
+    DOMAIN = os.getenv("DOMAIN", "http://localhost:8000")
 
     print(success("Base settings loaded successfully."))
 

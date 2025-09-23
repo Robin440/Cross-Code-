@@ -22,7 +22,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 import datetime
 
-import logging
+
 
 # Models and Serializers
 from account.models import CustomUser
@@ -30,6 +30,7 @@ from account.serializers import UserSerializer, UserCreateSerializer, LoginSeria
 from account.services import UserService
 from account.models import Verification
 
+import logging
 logger = logging.getLogger("account")
 # logger = logging.getLogger(__name__)
 
@@ -483,6 +484,8 @@ class LogoutAPIView(APIView):
                 token = RefreshToken(refresh_token)
                 token.blacklist()
 
+            user = request.user
+            user.is_authenticated = False
             # Clear the session
             request.session.flush()
 
@@ -517,6 +520,7 @@ class LogoutAPIView(APIView):
                 httponly=True,
                 samesite="Lax"
             )
+
 
             if request.accepted_renderer.format == "html":
                 messages.success(request, "You have been logged out successfully.")
