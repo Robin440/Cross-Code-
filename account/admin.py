@@ -12,7 +12,7 @@ class CustomUserAdmin(admin.ModelAdmin):
     filter_horizontal = ()
     list_filter = ('is_active', 'is_staff', 'is_superuser')
     fieldsets = (
-        ('User', {'fields': ('username', 'email', 'password')}),
+        ('User', {'fields': ('username', 'email', 'password','phone_number')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('id', {'fields': ('id',)}),
