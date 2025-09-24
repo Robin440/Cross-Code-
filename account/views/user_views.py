@@ -239,10 +239,12 @@ class RegisterAPIView(APIView):
             logger.error(
                 f"Invalid input: {serializer.errors}", extra={"service": "USER SERVICE"}
             )
-            return self._error_response(
-                f"Invalid input: {serializer.errors}",
+            return error_response(
+                request,
+                "Error: Invalid input",
                 serializer.errors,
                 status.HTTP_400_BAD_REQUEST,
+                self.template_name,
             )
 
         # Validate password
