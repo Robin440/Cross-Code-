@@ -9,11 +9,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib import messages
 from rest_framework.permissions import IsAuthenticated
 from utils.permissions import CustomIsAuthenticated
+from django.db import transaction
 
 
 # Local imports
 from django.contrib.auth import authenticate, logout
-from utils.responses import response_processor
+from utils.responses import response_processor, error_response
 from account.utils import UserUtils
 from utils.utils import Utils
 from services.email.email_service import EmailService
@@ -23,7 +24,6 @@ from django.urls import reverse
 import datetime
 
 
-
 # Models and Serializers
 from account.models import CustomUser
 from account.serializers import UserSerializer, UserCreateSerializer, LoginSerializer
@@ -31,6 +31,7 @@ from account.services import UserService
 from account.models import Verification
 
 import logging
+
 logger = logging.getLogger("account")
 # logger = logging.getLogger(__name__)
 
@@ -231,145 +232,113 @@ class RegisterAPIView(APIView):
         logger.debug(
             "Processing registration request", extra={"service": "USER SERVICE"}
         )
+        print(f"data in view: {request.data}")
+
         serializer = UserCreateSerializer(data=request.data)
-        valid_password = user_utils_manager.password_strength(
-            request.data.get("password", "")
-        )
-        if not valid_password:
-            logger.warning(
-                "Weak password provided during registration",
-                extra={"service": "USER SERVICE"},
-                exc_info=True,
+        if not serializer.is_valid():
+            logger.error(
+                f"Invalid input: {serializer.errors}", extra={"service": "USER SERVICE"}
             )
-            if request.accepted_renderer.format == "html":
-                return Response(
-                    {
-                        "error": "Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character."
-                    },
-                    template_name=self.template_name,
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        match_password = request.data.get("password") == request.data.get(
-            "confirm_password"
-        )
-        if not match_password:
+            return self._error_response(
+                f"Invalid input: {serializer.errors}",
+                serializer.errors,
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate password
+        if not user_utils_manager.password_strength(request.data.get("password", "")):
+            logger.warning("Weak password provided", extra={"service": "USER SERVICE"})
+            return error_response(
+                request,
+                "Error: Weak password provided",
+                serializer.errors,
+                status.HTTP_400_BAD_REQUEST,
+                self.template_name,
+            )
+
+        if request.data.get("password") != request.data.get("confirm_password"):
             logger.warning(
                 "Password and confirm password do not match",
                 extra={"service": "USER SERVICE"},
-                exc_info=True,
             )
-            if request.accepted_renderer.format == "html":
-                return Response(
-                    {"error": "Password and Confirm Password do not match"},
-                    template_name=self.template_name,
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            else:
-                return Response(
-                    {"error": "Password and Confirm Password do not match"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        # Proceed if serializer is valid
-        if serializer.is_valid():
-            try:
+            return error_response(
+                request,
+                "Error: Password and confirm password do not match.",
+                serializer.errors,
+                status.HTTP_400_BAD_REQUEST,
+                self.template_name,
+            )
+
+        # Use transaction to ensure atomicity
+        try:
+            with transaction.atomic():
                 user = serializer.create(serializer.validated_data)
                 if not user:
                     logger.error(
-                        "User creation failed",
-                        extra={"service": "USER SERVICE"},
-                        exc_info=True,
+                        "User creation failed", extra={"service": "USER SERVICE"}
                     )
-                    return response_processor(
-                        success=False,
-                        message="User creation failed",
-                        status_code=status.HTTP_400_BAD_REQUEST,
+                    return error_response(
+                        request,
+                        "Error: User creation failed, try again after sometime.",
+                        serializer.errors,
+                        status.HTTP_400_BAD_REQUEST,
+                        self.template_name,
                     )
-                try:
-                    verification = Verification.objects.create(
-                        user=user,
-                        token=utils_manager.generate_token(),
-                        otp=utils_manager.generate_otp_6_digit(),
-                        purpose="new_user_verification",
-                        expires_at=utils_manager.generate_otp_expiry(),
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to create verification record: {str(e)}",
-                        extra={"service": "USER SERVICE"},
-                        exc_info=True,
-                    )
-                    return response_processor(
-                        success=False,
-                        message="Failed to create verification record",
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-                # Send welcome email
+
+                verification = Verification.objects.create(
+                    user=user,
+                    token=user_utils_manager.generate_token(),
+                    otp=user_utils_manager.generate_otp(6),
+                    purpose="new_user_verification",
+                    expires_at=user_utils_manager.generate_otp_expiry(),
+                )
+
+                # Send welcome email (considered part of the transaction)
                 email = email_service_manager.send_welcome_email(
                     recipient=user.email,
                     username=user.username,
                     otp=verification.otp,
-                    token=verification.token
+                    token=verification.token,
                 )
-                 # Log email sending result
                 if not email:
                     logger.error(
                         f"Failed to send welcome email to {user.email}",
-                        extra={'service': 'EMAIL SERVICE'},
-                        exc_info=True
+                        extra={"service": "EMAIL SERVICE"},
                     )
+                    return error_response(
+                        request,
+                        f"Failed to send welcome email to {user.email}",
+                        serializer.errors,
+                        status.HTTP_400_BAD_REQUEST,
+                        self.template_name,
+                    )
+
                 logger.info(
                     f"User {user.username} registered successfully",
                     extra={"service": "USER SERVICE"},
                 )
-                # Return appropriate response based on request format
 
                 if request.accepted_renderer.format == "html":
                     return redirect(reverse("verify-otp") + f"?email={user.email}")
-                else:
-                    return response_processor(
-                        success=True,
-                        message="User registered successfully. Please verify your email.",
-                        data=UserSerializer(user).data,
-                        status_code=status.HTTP_201_CREATED,
-                    )
-            except Exception as e:
-                logger.error(
-                    f"Error during registration: {str(e)}",
-                    extra={"service": "USER SERVICE"},
-                    exc_info=True,
+                return response_processor(
+                    success=True,
+                    message="User registered successfully. Please verify your email.",
+                    data=UserSerializer(user).data,
+                    status_code=status.HTTP_201_CREATED,
                 )
-                if request.accepted_renderer.format == "html":
-                    return Response(
-                        {
-                            "error": f"Registration failed: {str(e)}",
-                            "errors": serializer.errors,
-                        },
-                        template_name=self.template_name,  # Render register.html
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                else:
-                    return Response(
-                        {"error": f"Registration failed: {str(e)}"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-        logger.error(
-            f"Invalid input: {serializer.errors}",
-            extra={"service": "USER SERVICE"},
-            exc_info=True,
-        )
-        if request.accepted_renderer.format == "html":
-            return Response(
-                {
-                    "error": f"Invalid input : {serializer.errors}",
-                    "errors": serializer.errors,
-                },
-                template_name=self.template_name,
-                status=status.HTTP_400_BAD_REQUEST,
+
+        except Exception as e:
+            logger.error(
+                f"Registration failed: {str(e)}",
+                extra={"service": "USER SERVICE"},
+                exc_info=True,
             )
-        else:
-            return Response(
-                {"error": "Invalid input", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_response(
+                request,
+                "Failed create user",
+                serializer.errors,
+                status.HTTP_400_BAD_REQUEST,
+                self.template_name,
             )
 
 
@@ -379,7 +348,9 @@ class HomeViewAPIView(APIView):
     permission_classes = [CustomIsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        user = request.user  # Use request.user (set by middleware or CustomIsAuthenticated)
+        user = (
+            request.user
+        )  # Use request.user (set by middleware or CustomIsAuthenticated)
         print(f"session {request.session.get('token_data')}")
         print(f"user in home : {user}")
         print(f"Authorization header: {request.META.get('HTTP_AUTHORIZATION')}")
@@ -389,9 +360,12 @@ class HomeViewAPIView(APIView):
             return response_manager.HTTP_200(
                 data=user, template_name=self.template_name
             )
+
+
 # account/views/user_views.py
 
 # ... (other imports and code remain the same)
+
 
 class LoginAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
@@ -417,7 +391,6 @@ class LoginAPIView(APIView):
             email = serializer.validated_data["email"]
             password = serializer.validated_data["password"]
             user = authenticate(request, email=email, password=password)
-            print(f"user auth : {user}")
             if not user:
                 return Response(
                     {"error": "Invalid credentials"},
@@ -445,7 +418,9 @@ class LoginAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 # ... (VerifiyOTPAPIView and RegisterAPIView remain the same)
+
 
 class HomeViewAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
@@ -458,19 +433,19 @@ class HomeViewAPIView(APIView):
         print(f"user in home : {user}")
         print(f"Authorization header: {request.META.get('HTTP_AUTHORIZATION')}")
         print(f"Cookies: {request.COOKIES}")
-        
+
         if request.accepted_renderer.format == "html":
             # Removed redundant user re-assignment; use request.user
             return response_manager.HTTP_200(
-                data={'user': user},  # Pass a dictionary to avoid 400 error
-                template_name=self.template_name
+                data={"user": user},  # Pass a dictionary to avoid 400 error
+                template_name=self.template_name,
             )
         return Response({"user": UserSerializer(user).data}, status=status.HTTP_200_OK)
 
 
-
 # account/views/user_views.py
 # ... (other imports and code remain the same)
+
 
 class LogoutAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
@@ -504,8 +479,7 @@ class LogoutAPIView(APIView):
 
             # Delete the access_token cookie
             response.delete_cookie(
-                "access_token",
-                path="/"  # Ensure the cookie is deleted for all paths
+                "access_token", path="/"  # Ensure the cookie is deleted for all paths
             )
             # Also clear other cookies to avoid interference
             response.delete_cookie("csrftoken", path="/")
@@ -518,9 +492,8 @@ class LogoutAPIView(APIView):
                 max_age=0,
                 path="/",
                 httponly=True,
-                samesite="Lax"
+                samesite="Lax",
             )
-
 
             if request.accepted_renderer.format == "html":
                 messages.success(request, "You have been logged out successfully.")
@@ -546,7 +519,7 @@ class LogoutAPIView(APIView):
                 max_age=0,
                 path="/",
                 httponly=True,
-                samesite="Lax"
+                samesite="Lax",
             )
             if request.accepted_renderer.format == "html":
                 messages.error(request, "Logout failed. Please try again.")
